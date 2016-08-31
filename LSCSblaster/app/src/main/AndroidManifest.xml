@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="kewpe.lscsblaster" >
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.SEND_SMS"/>
     <application
@@ -10,7 +11,6 @@
         android:name="android.support.multidex.MultiDexApplication"
         android:theme="@style/AppTheme" >
         <activity
-            android:screenOrientation="portrait"
             android:name=".MainActivity"
             android:label="@string/app_name"
             android:windowSoftInputMode="adjustPan">
@@ -21,17 +21,14 @@
             </intent-filter>
         </activity>
         <activity
-            android:screenOrientation="portrait"
             android:name=".LoginActivity"
             android:label="@string/title_activity_login" >
         </activity>
         <activity
-            android:screenOrientation="portrait"
             android:name=".SetupActivity"
             android:label="@string/title_activity_setup" >
         </activity>
         <activity
-            android:screenOrientation="portrait"
             android:name=".SettingsActivity"
             android:label="@string/title_activity_settings" >
         </activity>

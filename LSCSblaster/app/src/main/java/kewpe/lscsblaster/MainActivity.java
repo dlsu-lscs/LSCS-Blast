@@ -1,11 +1,17 @@
 package kewpe.lscsblaster;
 
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.telephony.SmsManager;
@@ -57,26 +63,28 @@ public class MainActivity extends AppCompatActivity {
         btn_blast.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new ProgressTask().execute();
+                SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+                String path = sp.getString(SP_KEY_FILEPATH, null);
+                Toast.makeText(getBaseContext(), "fp: "+path, Toast.LENGTH_LONG).show();
+                if(path!=null) {
+                    if(!et_what.getText().toString().isEmpty()) {
+                        new ProgressTask().execute();
+                    }else{
+                        Toast.makeText(getBaseContext(), "What is the message about?", Toast.LENGTH_LONG).show();
+                    }
+                }else{
+                    Toast.makeText(getBaseContext(), "Choose an excel file", Toast.LENGTH_LONG).show();
+                }
             }
         });
 
         btn_xls.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-                String path = sp.getString(SP_KEY_FILEPATH, null);
-                if(path!=null) {
-                    if(!et_what.getText().toString().isEmpty()) {
-                        Intent intent = new Intent("com.sec.android.app.myfiles.PICK_DATA");
-                        intent.putExtra("CONTENT_TYPE", "*/*");
-                        startActivityForResult(intent, CHOOSEFILE_RESULT);
-                    }else{
-                        Toast.makeText(getBaseContext(), "What is the message about?", Toast.LENGTH_LONG);
-                    }
-                }else{
-                    Toast.makeText(getBaseContext(), "Choose an excel file", Toast.LENGTH_LONG);
-                }
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.setType("*/*");
+                intent.addCategory (Intent.CATEGORY_OPENABLE);
+                startActivityForResult(Intent.createChooser(intent, "Open folder"), CHOOSEFILE_RESULT);
             }
         });
 
@@ -120,7 +128,9 @@ public class MainActivity extends AppCompatActivity {
             case CHOOSEFILE_RESULT:
                 if(resultCode==RESULT_OK){
 
-                    String filePath = data.getData().getPath();
+                    String filePath = getPath(this, data.getData());
+                    Log.d(TAG, "filepath: "+filePath);
+                    Toast.makeText(getBaseContext(),"filepath: "+filePath, Toast.LENGTH_LONG).show();
                     SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
                     SharedPreferences.Editor spEditor = sp.edit();
                     spEditor.putString(MainActivity.SP_KEY_FILEPATH, filePath);
@@ -129,6 +139,137 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
     }
+
+    public static String getPath(final Context context, final Uri uri) {
+
+        // check here to KITKAT or new version
+        final boolean isKitKat = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
+
+        // DocumentProvider
+        if (isKitKat && DocumentsContract.isDocumentUri(context, uri)) {
+
+            // ExternalStorageProvider
+            if (isExternalStorageDocument(uri)) {
+                final String docId = DocumentsContract.getDocumentId(uri);
+                final String[] split = docId.split(":");
+                final String type = split[0];
+
+                if ("primary".equalsIgnoreCase(type)) {
+                    return Environment.getExternalStorageDirectory() + "/"
+                            + split[1];
+                }
+            }
+            // DownloadsProvider
+            else if (isDownloadsDocument(uri)) {
+
+                final String id = DocumentsContract.getDocumentId(uri);
+                final Uri contentUri = ContentUris.withAppendedId(
+                        Uri.parse("content://downloads/public_downloads"),
+                        Long.valueOf(id));
+
+                return getDataColumn(context, contentUri, null, null);
+            }
+            // MediaProvider
+            else if (isMediaDocument(uri)) {
+                final String docId = DocumentsContract.getDocumentId(uri);
+                final String[] split = docId.split(":");
+                final String type = split[0];
+
+                Uri contentUri = null;
+                if ("image".equals(type)) {
+                    contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+                } else if ("video".equals(type)) {
+                    contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+                } else if ("audio".equals(type)) {
+                    contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+                }
+
+                final String selection = "_id=?";
+                final String[] selectionArgs = new String[] { split[1] };
+
+                return getDataColumn(context, contentUri, selection,
+                        selectionArgs);
+            }
+        }
+        // MediaStore (and general)
+        else if ("content".equalsIgnoreCase(uri.getScheme())) {
+
+            // Return the remote address
+            if (isGooglePhotosUri(uri))
+                return uri.getLastPathSegment();
+
+            return getDataColumn(context, uri, null, null);
+        }
+        // File
+        else if ("file".equalsIgnoreCase(uri.getScheme())) {
+            return uri.getPath();
+        }
+
+        return null;
+    }
+
+    public static String getDataColumn(Context context, Uri uri,
+                                       String selection, String[] selectionArgs) {
+
+        Cursor cursor = null;
+        final String column = "_data";
+        final String[] projection = { column };
+
+        try {
+            cursor = context.getContentResolver().query(uri, projection,
+                    selection, selectionArgs, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                final int index = cursor.getColumnIndexOrThrow(column);
+                return cursor.getString(index);
+            }
+        } finally {
+            if (cursor != null)
+                cursor.close();
+        }
+        return null;
+    }
+
+    /**
+     * @param uri
+     *            The Uri to check.
+     * @return Whether the Uri authority is ExternalStorageProvider.
+     */
+    public static boolean isExternalStorageDocument(Uri uri) {
+        return "com.android.externalstorage.documents".equals(uri
+                .getAuthority());
+    }
+
+    /**
+     * @param uri
+     *            The Uri to check.
+     * @return Whether the Uri authority is DownloadsProvider.
+     */
+    public static boolean isDownloadsDocument(Uri uri) {
+        return "com.android.providers.downloads.documents".equals(uri
+                .getAuthority());
+    }
+
+    /**
+     * @param uri
+     *            The Uri to check.
+     * @return Whether the Uri authority is MediaProvider.
+     */
+    public static boolean isMediaDocument(Uri uri) {
+        return "com.android.providers.media.documents".equals(uri
+                .getAuthority());
+    }
+
+    /**
+     * @param uri
+     *            The Uri to check.
+     * @return Whether the Uri authority is Google Photos.
+     */
+    public static boolean isGooglePhotosUri(Uri uri) {
+        return "com.google.android.apps.photos.content".equals(uri
+                .getAuthority());
+    }
+
+
 
     @Override
     protected void onResume() {
@@ -180,6 +321,7 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+    //checkpoint
 
     private void readExcelFile(Context context, String filename) {
 
@@ -220,9 +362,17 @@ public class MainActivity extends AppCompatActivity {
                 while (rowIter.hasNext()) {
                     XSSFRow myRow = (XSSFRow) rowIter.next();
                     XSSFCell myCell = myRow.getCell(2);
-                    //Toast.makeText(getBaseContext(), myCell.getRawValue(), Toast.LENGTH_SHORT);
-                    smsManager.sendTextMessage("0"+myCell.getRawValue(), null, message, null, null);
-                    Log.d(TAG, "Cell Value: " + myCell.getRawValue());
+                    String number;
+                    if(myCell.getRawValue().startsWith("+63")){
+                        number = myCell.getRawValue().substring(0, 3);
+                    }else if(myCell.getRawValue().startsWith("9")){
+                        number = "0"+myCell.getRawValue();
+                    }else{
+                        number = myCell.getRawValue();
+                    }
+
+                    smsManager.sendTextMessage("0"+number, null, message, null, null);
+                    Log.d(TAG, "Cell Value: " + myCell.getRawValue()+" "+number);
                 }
             }
         }catch (Exception e){
