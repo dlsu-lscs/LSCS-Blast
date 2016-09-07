@@ -37,7 +37,7 @@ import java.io.FileInputStream;
 import java.util.Iterator;
 
 public class MainActivity extends AppCompatActivity {
-    Button btn_xls, btn_settings, btn_blast;
+    Button btn_xls, btn_settings, btn_blast, btn_contacts;
     EditText et_what, et_where, et_when;
     ProgressBar bar;
     TextView tv_filepath;
@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     boolean needPasscode = true;
     static String TAG = "ExelLog";
     private static final int CHOOSEFILE_RESULT = 1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,20 +60,21 @@ public class MainActivity extends AppCompatActivity {
         btn_xls = (Button) findViewById(R.id.btn_xls);
         btn_settings = (Button) findViewById(R.id.btn_settings);
         btn_blast = (Button) findViewById(R.id.btn_blast);
+        btn_contacts = (Button) findViewById(R.id.btn_contacts);
 
         btn_blast.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
                 String path = sp.getString(SP_KEY_FILEPATH, null);
-                Toast.makeText(getBaseContext(), "fp: "+path, Toast.LENGTH_LONG).show();
-                if(path!=null) {
-                    if(!et_what.getText().toString().isEmpty()) {
+                Toast.makeText(getBaseContext(), "fp: " + path, Toast.LENGTH_LONG).show();
+                if (path != null) {
+                    if (!et_what.getText().toString().isEmpty()) {
                         new ProgressTask().execute();
-                    }else{
+                    } else {
                         Toast.makeText(getBaseContext(), "What is the message about?", Toast.LENGTH_LONG).show();
                     }
-                }else{
+                } else {
                     Toast.makeText(getBaseContext(), "Choose an excel file", Toast.LENGTH_LONG).show();
                 }
             }
@@ -83,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                 intent.setType("*/*");
-                intent.addCategory (Intent.CATEGORY_OPENABLE);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
                 startActivityForResult(Intent.createChooser(intent, "Open folder"), CHOOSEFILE_RESULT);
             }
         });
@@ -98,11 +100,22 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(settingsIntent);
             }
         });
+
+        btn_contacts.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent saveIntent = new Intent();
+                saveIntent.setClass(getBaseContext(), SaveActivity.class);
+                saveIntent.putExtra("needPassword", false);
+                finish();
+                startActivity(saveIntent);
+            }
+        });
     }
 
-    private class ProgressTask extends AsyncTask<Void,Void,Void> {
+    private class ProgressTask extends AsyncTask<Void, Void, Void> {
         @Override
-        protected void onPreExecute(){
+        protected void onPreExecute() {
             bar.setVisibility(View.VISIBLE);
         }
 
@@ -124,13 +137,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         // TODO Auto-generated method stub
-        switch(requestCode){
+        switch (requestCode) {
             case CHOOSEFILE_RESULT:
-                if(resultCode==RESULT_OK){
+                if (resultCode == RESULT_OK) {
 
                     String filePath = getPath(this, data.getData());
-                    Log.d(TAG, "filepath: "+filePath);
-                    Toast.makeText(getBaseContext(),"filepath: "+filePath, Toast.LENGTH_LONG).show();
+                    Log.d(TAG, "filepath: " + filePath);
+                    Toast.makeText(getBaseContext(), "filepath: " + filePath, Toast.LENGTH_LONG).show();
                     SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
                     SharedPreferences.Editor spEditor = sp.edit();
                     spEditor.putString(MainActivity.SP_KEY_FILEPATH, filePath);
@@ -185,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 final String selection = "_id=?";
-                final String[] selectionArgs = new String[] { split[1] };
+                final String[] selectionArgs = new String[]{split[1]};
 
                 return getDataColumn(context, contentUri, selection,
                         selectionArgs);
@@ -213,7 +226,7 @@ public class MainActivity extends AppCompatActivity {
 
         Cursor cursor = null;
         final String column = "_data";
-        final String[] projection = { column };
+        final String[] projection = {column};
 
         try {
             cursor = context.getContentResolver().query(uri, projection,
@@ -230,8 +243,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * @param uri
-     *            The Uri to check.
+     * @param uri The Uri to check.
      * @return Whether the Uri authority is ExternalStorageProvider.
      */
     public static boolean isExternalStorageDocument(Uri uri) {
@@ -240,8 +252,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * @param uri
-     *            The Uri to check.
+     * @param uri The Uri to check.
      * @return Whether the Uri authority is DownloadsProvider.
      */
     public static boolean isDownloadsDocument(Uri uri) {
@@ -250,8 +261,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * @param uri
-     *            The Uri to check.
+     * @param uri The Uri to check.
      * @return Whether the Uri authority is MediaProvider.
      */
     public static boolean isMediaDocument(Uri uri) {
@@ -260,15 +270,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * @param uri
-     *            The Uri to check.
+     * @param uri The Uri to check.
      * @return Whether the Uri authority is Google Photos.
      */
     public static boolean isGooglePhotosUri(Uri uri) {
         return "com.google.android.apps.photos.content".equals(uri
                 .getAuthority());
     }
-
 
 
     @Override
@@ -281,7 +289,7 @@ public class MainActivity extends AppCompatActivity {
 
         Intent i = getIntent();
         needPasscode = i.getBooleanExtra("needPasscode", true);
-        if(needPasscode) {
+        if (needPasscode) {
             if (pass == null) {
                 Intent setupIntent = new Intent();
                 setupIntent.setClass(getBaseContext(), SetupActivity.class);
@@ -293,10 +301,10 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(loginIntent);
             }
         } else {
-            i.putExtra("needPasscode",true);
+            i.putExtra("needPasscode", true);
         }
-        if(path!=null){
-            tv_filepath.setText(path.substring(path.lastIndexOf("/")+1));
+        if (path != null) {
+            tv_filepath.setText(path.substring(path.lastIndexOf("/") + 1));
         }
     }
 
@@ -325,13 +333,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void readExcelFile(Context context, String filename) {
 
-        if (!isExternalStorageAvailable())
-        {
+        if (!isExternalStorageAvailable()) {
             Log.e(TAG, "Storage not available or read only");
             return;
         }
 
-        try{
+        try {
             // Creating Input Stream
             File file = new File(filename);
             FileInputStream myInput = new FileInputStream(file);
@@ -346,36 +353,36 @@ public class MainActivity extends AppCompatActivity {
             XSSFSheet mySheet = myWorkBook.getSheetAt(0);
 
             Iterator rowIter = mySheet.rowIterator();
-            if(rowIter.hasNext()) {
+            if (rowIter.hasNext()) {
                 SmsManager smsManager = SmsManager.getDefault();
                 String message = "LSCS BLAST!\n";
-                if(!et_what.getText().toString().isEmpty()){
-                    message += "WHAT: "+et_what.getText().toString()+"\n";
+                if (!et_what.getText().toString().isEmpty()) {
+                    message += "WHAT: " + et_what.getText().toString() + "\n";
                 }
-                if(!et_where.getText().toString().isEmpty()){
-                    message += "WHERE: "+et_where.getText().toString()+"\n";
+                if (!et_where.getText().toString().isEmpty()) {
+                    message += "WHERE: " + et_where.getText().toString() + "\n";
                 }
-                if(!et_when.getText().toString().isEmpty()){
-                    message += "WHEN: "+et_when.getText().toString()+"\n";
+                if (!et_when.getText().toString().isEmpty()) {
+                    message += "WHEN: " + et_when.getText().toString() + "\n";
                 }
                 rowIter.next();
                 while (rowIter.hasNext()) {
                     XSSFRow myRow = (XSSFRow) rowIter.next();
                     XSSFCell myCell = myRow.getCell(2);
                     String number;
-                    if(myCell.getRawValue().startsWith("+63")){
+                    if (myCell.getRawValue().startsWith("+63")) {
                         number = myCell.getRawValue().substring(0, 3);
-                    }else if(myCell.getRawValue().startsWith("9")){
-                        number = "0"+myCell.getRawValue();
-                    }else{
+                    } else if (myCell.getRawValue().startsWith("9")) {
+                        number = "0" + myCell.getRawValue();
+                    } else {
                         number = myCell.getRawValue();
                     }
 
-                    smsManager.sendTextMessage("0"+number, null, message, null, null);
-                    Log.d(TAG, "Cell Value: " + myCell.getRawValue()+" "+number);
+                    smsManager.sendTextMessage("0" + number, null, message, null, null);
+                    Log.d(TAG, "Cell Value: " + myCell.getRawValue() + " " + number);
                 }
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

@@ -123,7 +123,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="3"
-            android:weightSum="10"
+            android:weightSum="12"
             android:gravity="center_vertical"
             android:orientation="vertical"
             android:layout_alignParentBottom="true">
@@ -132,21 +132,28 @@
             <Button
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="3.2"
+                android:layout_weight="3"
                 android:text="Choose Excel File"
                 android:id="@+id/btn_xls"/>
 
             <Button
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="3.2"
+                android:layout_weight="3"
                 android:text="Blast"
                 android:id="@+id/btn_blast"/>
 
             <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="3"
+                    android:text="Save to Contacts"
+                    android:id="@+id/btn_contacts"/>
+
+            <Button
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="3.2"
+                android:layout_weight="3"
                 android:text="Settings"
                 android:id="@+id/btn_settings"/>
 
