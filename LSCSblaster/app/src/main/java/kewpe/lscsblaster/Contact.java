@@ -5,10 +5,6 @@ public class Contact {
     private String number;
     private boolean isSelected;
 
-    public Contact() {
-
-    }
-
     public Contact(String name, String number) {
         this.name = name;
         this.number = number;

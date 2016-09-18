@@ -39,6 +39,8 @@
                 android:name=".SaveActivity"
                 android:label="SaveActivity">
         </activity>
+        <activity android:name=".BlastActivity">
+        </activity>
     </application>
 
 </manifest>

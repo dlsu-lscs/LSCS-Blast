@@ -13,13 +13,8 @@ import java.util.ArrayList;
 public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactHolder> {
     private ArrayList<Contact> contacts;
     ContactAdapter.ContactHolder holder;
-    private boolean isSelectAll = false;
 
     public ContactAdapter(ArrayList<Contact> contacts){
-        this.contacts = contacts;
-    }
-
-    public void setContacts(ArrayList<Contact> contacts){
         this.contacts = contacts;
     }
 
@@ -42,7 +37,6 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactH
 
         holder.cbx_contact.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                //v.invalidate();
                 CheckBox cb = (CheckBox) v;
                 Contact contact = (Contact) cb.getTag();
 
@@ -57,20 +51,11 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactH
             return this.contacts.size();
     }
 
-    public ArrayList<Contact> getAllContacts() {
-        return this.contacts;
-    }
-
-    public void selectAll() {
-        this.isSelectAll = true;
-    }
-
     public class ContactHolder extends RecyclerView.ViewHolder {
         CheckBox cbx_contact;
 
         public ContactHolder(View itemView) {
             super(itemView);
-            //itemView.invalidate();
             cbx_contact = (CheckBox) itemView.findViewById(R.id.cbx_contact);
         }
     }

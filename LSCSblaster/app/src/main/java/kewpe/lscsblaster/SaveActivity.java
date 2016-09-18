@@ -1,5 +1,6 @@
 package kewpe.lscsblaster;
 
+import android.app.DialogFragment;
 import android.content.ContentProviderOperation;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -27,7 +28,7 @@ import java.util.Iterator;
 
 public class SaveActivity extends AppCompatActivity {
 
-    Button btn_save, btn_exit;
+    Button btn_save, btn_back;
     RecyclerView contactList;
     ContactAdapter contactAdapter;
 
@@ -39,11 +40,16 @@ public class SaveActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_save);
 
+        DialogFragment dialogFragment = new SaveDialogFragment();
+        dialogFragment.show(getFragmentManager(), "");
+    }
+
+    public void notSaveAll() {
         Intent i = getIntent();
         changePass = i.getBooleanExtra("ChangePass", false);
 
         btn_save = (Button) findViewById(R.id.btn_save);
-        btn_exit = (Button) findViewById(R.id.btn_exit);
+        btn_back = (Button) findViewById(R.id.btn_back);
 
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         String filePath = sp.getString(MainActivity.SP_KEY_FILEPATH, null);
@@ -86,7 +92,7 @@ public class SaveActivity extends AppCompatActivity {
             }
         });
 
-        btn_exit.setOnClickListener(new View.OnClickListener() {
+        btn_back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent mainIntent = new Intent();
@@ -96,6 +102,25 @@ public class SaveActivity extends AppCompatActivity {
                 startActivity(mainIntent);
             }
         });
+    }
+
+    public void saveAll() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        String filePath = sp.getString(MainActivity.SP_KEY_FILEPATH, null);
+
+        final ArrayList<Contact> allContacts = readExcelFile(filePath);
+
+        addToContacts(allContacts);
+
+        Toast.makeText(SaveActivity.this,
+                "Saved to contacts", Toast.LENGTH_LONG)
+                .show();
+
+        Intent mainIntent = new Intent();
+        mainIntent.setClass(getBaseContext(), MainActivity.class);
+        mainIntent.putExtra("needPasscode", false);
+        finish();
+        startActivity(mainIntent);
     }
 
     public boolean isExternalStorageAvailable() {

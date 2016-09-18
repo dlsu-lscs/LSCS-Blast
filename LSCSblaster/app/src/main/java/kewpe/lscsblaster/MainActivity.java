@@ -1,5 +1,6 @@
 package kewpe.lscsblaster;
 
+import android.app.DialogFragment;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -8,39 +9,36 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.Window;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ProgressBar;
-import android.widget.TextView;
-import android.widget.Toast;
-
+import android.widget.*;
+import org.apache.poi.ss.formula.eval.StringEval;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-
 import java.io.File;
 import java.io.FileInputStream;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 public class MainActivity extends AppCompatActivity {
     Button btn_xls, btn_settings, btn_blast, btn_contacts;
-    EditText et_what, et_where, et_when;
+    static EditText et_what, et_where, et_when;
     ProgressBar bar;
     TextView tv_filepath;
+
     final static String SP_KEY_PASSCODE = "PASSCODE";
     final static String SP_KEY_FILEPATH = "FILEPATH";
     boolean needPasscode = true;
@@ -65,18 +63,8 @@ public class MainActivity extends AppCompatActivity {
         btn_blast.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-                String path = sp.getString(SP_KEY_FILEPATH, null);
-                Toast.makeText(getBaseContext(), "fp: " + path, Toast.LENGTH_LONG).show();
-                if (path != null) {
-                    if (!et_what.getText().toString().isEmpty()) {
-                        new ProgressTask().execute();
-                    } else {
-                        Toast.makeText(getBaseContext(), "What is the message about?", Toast.LENGTH_LONG).show();
-                    }
-                } else {
-                    Toast.makeText(getBaseContext(), "Choose an excel file", Toast.LENGTH_LONG).show();
-                }
+                DialogFragment dialogFragment = new BlastDialogFragment();
+                dialogFragment.show(getFragmentManager(), "");
             }
         });
 
@@ -124,7 +112,8 @@ public class MainActivity extends AppCompatActivity {
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
             String filePath = sp.getString(MainActivity.SP_KEY_FILEPATH, null);
 
-            readExcelFile(getBaseContext(), filePath);
+            ArrayList<String> numbers = readExcelFile(getBaseContext(), filePath);
+            sendSMS(numbers);
             return null;
         }
 
@@ -150,6 +139,42 @@ public class MainActivity extends AppCompatActivity {
                     spEditor.commit();
                 }
                 break;
+        }
+    }
+
+    public void blastAll() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        String path = sp.getString(SP_KEY_FILEPATH, null);
+//        Toast.makeText(getBaseContext(), "fp: " + path, Toast.LENGTH_LONG).show();
+
+        if (path != null) {
+            if (!et_what.getText().toString().isEmpty()) {
+                new ProgressTask().execute();
+            } else {
+                Toast.makeText(getBaseContext(), "What is the message about?", Toast.LENGTH_LONG).show();
+            }
+        } else {
+            Toast.makeText(getBaseContext(), "Choose an excel file", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public void blastFilter() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        String path = sp.getString(SP_KEY_FILEPATH, null);
+//        Toast.makeText(getBaseContext(), "fp: " + path, Toast.LENGTH_LONG).show();
+
+        if (path != null) {
+            if (!et_what.getText().toString().isEmpty()) {
+                Intent blastIntent = new Intent();
+                blastIntent.setClass(getBaseContext(), BlastActivity.class);
+                blastIntent.putExtra("needPassword", false);
+                finish();
+                startActivity(blastIntent);
+            } else {
+                Toast.makeText(getBaseContext(), "What is the message about?", Toast.LENGTH_LONG).show();
+            }
+        } else {
+            Toast.makeText(getBaseContext(), "Choose an excel file", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -331,11 +356,12 @@ public class MainActivity extends AppCompatActivity {
     }
     //checkpoint
 
-    private void readExcelFile(Context context, String filename) {
+    private ArrayList<String> readExcelFile(Context context, String filename) {
+        ArrayList<String> numbers = new ArrayList<>();
 
         if (!isExternalStorageAvailable()) {
             Log.e(TAG, "Storage not available or read only");
-            return;
+            return null;
         }
 
         try {
@@ -354,17 +380,6 @@ public class MainActivity extends AppCompatActivity {
 
             Iterator rowIter = mySheet.rowIterator();
             if (rowIter.hasNext()) {
-                SmsManager smsManager = SmsManager.getDefault();
-                String message = "LSCS BLAST!\n";
-                if (!et_what.getText().toString().isEmpty()) {
-                    message += "WHAT: " + et_what.getText().toString() + "\n";
-                }
-                if (!et_where.getText().toString().isEmpty()) {
-                    message += "WHERE: " + et_where.getText().toString() + "\n";
-                }
-                if (!et_when.getText().toString().isEmpty()) {
-                    message += "WHEN: " + et_when.getText().toString() + "\n";
-                }
                 rowIter.next();
                 while (rowIter.hasNext()) {
                     XSSFRow myRow = (XSSFRow) rowIter.next();
@@ -378,12 +393,32 @@ public class MainActivity extends AppCompatActivity {
                         number = myCell.getRawValue();
                     }
 
-                    smsManager.sendTextMessage("0" + number, null, message, null, null);
+                    numbers.add(number);
                     Log.d(TAG, "Cell Value: " + myCell.getRawValue() + " " + number);
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+
+        return numbers;
+    }
+
+    public static void sendSMS(ArrayList<String> numbers) {
+        for (String number : numbers) {
+            SmsManager smsManager = SmsManager.getDefault();
+            String message = "LSCS BLAST!\n";
+            if (!et_what.getText().toString().isEmpty()) {
+                message += "WHAT: " + et_what.getText().toString() + "\n";
+            }
+            if (!et_where.getText().toString().isEmpty()) {
+                message += "WHERE: " + et_where.getText().toString() + "\n";
+            }
+            if (!et_when.getText().toString().isEmpty()) {
+                message += "WHEN: " + et_when.getText().toString();
+            }
+
+            smsManager.sendTextMessage(number, null, message, null, null);
         }
     }
 

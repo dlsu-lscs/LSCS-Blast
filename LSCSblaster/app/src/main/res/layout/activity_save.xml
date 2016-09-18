@@ -28,9 +28,12 @@
                 android:text="Save"
                 android:id="@+id/btn_save"
                 android:layout_centerHorizontal="true"
-                android:layout_weight="8" android:layout_gravity="center_horizontal"/>
-        <Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Exit"
-                android:id="@+id/btn_exit"
+                android:layout_weight="8"
+                android:layout_gravity="center_horizontal"/>
+        <Button android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Back"
+                android:id="@+id/btn_back"
                 android:layout_centerHorizontal="true"
                 android:layout_weight="8"
                 android:layout_gravity="center_horizontal"/>

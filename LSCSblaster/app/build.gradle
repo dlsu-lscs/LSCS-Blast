@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.0"
+    buildToolsVersion '23.0.2'
 
     defaultConfig {
         applicationId "kewpe.lscsblaster"
@@ -32,6 +32,7 @@ dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.android.support:multidex:1.0.0'
     compile 'com.android.support:appcompat-v7:23.0.0'
+    compile 'com.android.support:recyclerview-v7:23.0.0'
     compile files('libs/aa-poi-3.10-min-0.1.5.jar')
     compile files('libs/aa-poi-ooxml-schemas-3.10-reduced-more-0.1.5.jar')
 }
